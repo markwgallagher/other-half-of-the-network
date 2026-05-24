@@ -2,391 +2,798 @@
 
 # The Other Half of the Network
 
-## Session 1 — Foundations, Flow, and Why Networks Matter
+## Session 1 — Standing Up the Stack
 
-### Welcome
-
-This course is designed to help students understand the modern network beyond just memorizing ports, protocols, and diagrams. We will focus on how real systems communicate, where problems occur, how modern applications behave, and why networking knowledge still matters in cloud, security, AI, gaming, streaming, and enterprise environments.
-
-Session 1 establishes the mental model used throughout the course.
+**Duration:** ~90 minutes
+**Format:** Follow-along, hands-on
 
 ---
 
-# Learning Objectives
+# Welcome
 
-By the end of Session 1, students should be able to:
+By the end of this session, you will:
 
-* Explain what a network actually is in practical terms.
-* Describe the difference between applications, protocols, and transport.
-* Identify the major layers involved in modern communication.
-* Understand packet flow at a high level.
-* Explain the difference between TCP and UDP.
-* Recognize how latency, bandwidth, and packet loss affect user experience.
-* Understand why troubleshooting requires thinking across layers.
-* Describe why encryption and modern protocols changed network visibility.
-* Use Wireshark to observe basic packet exchanges.
+* Provision a real cloud VM
+* SSH into a public Linux server
+* Install and verify a complete LAMP stack
+* Serve a web page from your own public IP address
+* Make your first commit to the shared course repository
 
----
+This course is not a Linux certification prep class.
 
-# Required Software
-
-Install before class if possible:
-
-* Wireshark
-* Modern web browser (Chrome, Firefox, or Edge)
-* Terminal access
-
-  * Windows Terminal / PowerShell
-  * macOS Terminal
-  * Linux shell
-
-Optional:
-
-* VS Code
-* Packet Tracer or GNS3
+We are building real infrastructure while learning the operational thinking behind it.
 
 ---
 
-# Vocabulary for Session 1
+# Pre-Session Checklist
 
-| Term       | Meaning                                              |
-| ---------- | ---------------------------------------------------- |
-| Packet     | A unit of network data sent across a network         |
-| Protocol   | Rules for communication between systems              |
-| Client     | A system requesting a service                        |
-| Server     | A system providing a service                         |
-| Latency    | Delay between request and response                   |
-| Bandwidth  | Maximum transfer capacity                            |
-| Throughput | Actual achieved transfer rate                        |
-| TCP        | Reliable transport protocol                          |
-| UDP        | Fast, connectionless transport protocol              |
-| DNS        | Converts names into IP addresses                     |
-| TLS        | Encryption used for secure communications            |
-| Flow       | A conversation between systems                       |
-| Endpoint   | Device or application participating in communication |
+Before class, make sure you have:
+
+* Personal credit/debit card available (~$6 charge)
+* SSH client installed
+
+  * macOS/Linux: Terminal
+  * Windows: Windows Terminal preferred
+* Git installed locally
+* Azure DevOps access confirmed
+
+Verify Git:
+
+```bash
+git --version
+```
+
+Open these sites in your browser:
+
+* digitalocean.com
+* cloudflare.com
 
 ---
 
-# The Big Idea
+# 0. Welcome & Framing
 
-Most users think the Internet is:
+## Why We’re Here
 
-* websites
-* apps
-* videos
-* games
-* cloud services
+Traditional networking courses focus heavily on:
 
-Networking professionals see:
-
+* routers
+* switches
 * protocols
-* state
-* timing
-* routing
-* retransmissions
-* congestion
-* encryption
-* application behavior
-* visibility challenges
+* diagrams
 
-Modern networking is no longer just switches and routers.
-It is understanding how distributed systems communicate.
+This course focuses on the operational side students often never touch:
 
----
-
-# A Modern Packet Journey
-
-When you open a webpage:
-
-1. Your system checks DNS.
-2. DNS resolves the destination.
-3. Your browser opens a connection.
-4. TLS negotiation occurs.
-5. HTTP requests are exchanged.
-6. Data is split into packets.
-7. Packets traverse many networks.
-8. Responses return.
-9. Lost packets may be retransmitted.
-10. The application renders content.
-
-This all happens in milliseconds.
-
----
-
-# Layer Thinking
-
-You do not need to memorize the OSI model for this course.
-You do need to understand layered thinking.
-
-A problem can exist in:
-
-| Layer Area  | Example Problem         |
-| ----------- | ----------------------- |
-| Physical    | Bad cable or weak Wi‑Fi |
-| Network     | Routing issue           |
-| Transport   | TCP retransmissions     |
-| Security    | TLS handshake failure   |
-| Application | Broken API              |
-| DNS         | Name resolution failure |
-
-Real troubleshooting means asking:
-
-> “Which layer is actually failing?”
-
----
-
-# TCP vs UDP
-
-## TCP
-
-TCP prioritizes reliability.
-
-Features:
-
-* Ordered delivery
-* Retransmissions
-* Congestion control
-* Session state
-
-Common Uses:
-
-* HTTPS
-* SSH
-* Email
-* APIs
-
-Strength:
-Reliable communication.
-
-Weakness:
-Extra overhead and latency.
-
----
-
-## UDP
-
-UDP prioritizes speed.
-
-Features:
-
-* Minimal overhead
-* No guaranteed delivery
-* No retransmission
-* Stateless transport
-
-Common Uses:
-
-* Gaming
-* Voice/video
+* Linux systems
+* web servers
 * DNS
-* Streaming
-* QUIC foundations
+* TLS
+* cloud infrastructure
+* deployment
+* observability
 
-Strength:
-Low latency.
+The network is only half the picture.
 
-Weakness:
-Applications must handle reliability.
-
----
-
-# Why QUIC Matters
-
-Modern applications increasingly use QUIC and HTTP/3.
-
-QUIC:
-
-* Runs over UDP
-* Includes encryption by default
-* Reduces connection setup time
-* Improves mobility and performance
-
-This changes traditional troubleshooting because:
-
-* Less traffic is visible in plaintext
-* Middleboxes lose visibility
-* Old assumptions break
+This course covers the other half.
 
 ---
 
-# Latency vs Bandwidth
+## Ground Rules
 
-A fast network is not always a low-latency network.
-
-Examples:
-
-| Situation                     | Result                            |
-| ----------------------------- | --------------------------------- |
-| Huge bandwidth + high latency | Large downloads okay, gaming bad  |
-| Low bandwidth + low latency   | Responsive but limited throughput |
-| Packet loss                   | Applications stall or retransmit  |
-
-User experience is often more sensitive to latency than bandwidth.
+* Follow along on your own machine
+* Falling behind is normal — ask questions immediately
+* CLI only
+* No cPanel or GUI deployment tools
+* There are many valid ways to do everything shown here
+* Questions are always welcome
 
 ---
 
-# What Wireshark Shows You
+## Cost Transparency
 
-Wireshark allows you to observe:
+Today’s infrastructure cost:
 
-* DNS lookups
-* TCP handshakes
-* TLS negotiation
-* HTTP requests
-* Retransmissions
-* Resets
-* Timing
+* ~$6 DigitalOcean Droplet
 
-Wireshark does NOT magically decode everything.
-Modern encryption limits visibility.
+Total estimated course cost:
 
-That is part of modern networking reality.
+* ~$10–15 depending on your domain registration
 
----
+This infrastructure belongs to you.
 
-# Lab Exercise — First Packet Capture
+You can:
 
-## Goal
-
-Observe a real web session.
-
-Students may use either:
-
-* Wireshark
-* tcpdump
-
-The important skill is observing flows and protocols.
+* keep it running
+* continue building on it
+* destroy it after the course
 
 ---
 
-## Option A — Wireshark
+# 1. DigitalOcean Account Setup
 
-### Steps
+## Create Your Account
 
-1. Open Wireshark.
-2. Start capture on active interface.
-3. Visit a website.
-4. Stop capture.
-5. Search for:
+Create a DigitalOcean account using a personal email address.
 
-   * DNS
-   * TCP SYN
-   * TLS
-6. Identify:
-
-   * Source IP
-   * Destination IP
-   * Protocols used
+Use personal infrastructure for this course — not employer-owned systems.
 
 ---
 
-## Option B — tcpdump
+## Configure Billing Safety Limits
 
-### Start Capture
+Before creating resources:
 
-Linux/macOS:
-
-```bash
-sudo tcpdump -i any -w first_capture.pcap
-```
-
-Windows with Npcap:
-
-```powershell
-tcpdump -i 1 -w first_capture.pcap
-```
-
-### Generate Traffic
-
-Visit a website or run:
-
-```bash
-ping example.com
-```
-
-### Stop Capture
-
-Press:
+1. Add a payment method
+2. Navigate to:
 
 ```text
-CTRL+C
+Settings → Billing → Spending Limits
 ```
 
-### Review Capture
+3. Set a spending alert at:
+
+```text
+$15/month
+```
+
+This protects against accidental charges.
+
+---
+
+## Why DigitalOcean?
+
+DigitalOcean is intentionally simpler than AWS for a first infrastructure course.
+
+Advantages:
+
+* predictable pricing
+* simpler UI
+* faster onboarding
+* easier operational visibility
+
+The same concepts still transfer to:
+
+* AWS
+* Azure
+* GCP
+* VMware
+* on-prem virtualization
+
+---
+
+# SSH Key Authentication
+
+## Why SSH Keys Matter
+
+SSH key authentication removes password-based remote login.
+
+| Component   | Purpose                 |
+| ----------- | ----------------------- |
+| Private Key | Stays on your machine   |
+| Public Key  | Installed on the server |
+
+Benefits:
+
+* stronger security
+* reduced brute-force exposure
+* standard operational practice
+
+---
+
+## Generate an SSH Key
+
+Run:
 
 ```bash
-tcpdump -nn -r first_capture.pcap
+ssh-keygen -t ed25519 -C "your_email@example.com"
 ```
 
-Optional:
+Accept the default location:
 
-Open the `.pcap` file in Wireshark for deeper analysis.
+```text
+~/.ssh/id_ed25519
+```
 
----
-
-## Questions
-
-## Goal
-
-Observe a real web session.
-
-## Steps
-
-1. Open Wireshark.
-2. Start capture on active interface.
-3. Visit a website.
-4. Stop capture.
-5. Search for:
-
-   * DNS
-   * TCP SYN
-   * TLS
-6. Identify:
-
-   * Source IP
-   * Destination IP
-   * Protocols used
-
-## Questions
-
-* How many protocols were involved?
-* Was the traffic encrypted?
-* How quickly did the connection establish?
-* Did you observe retransmissions?
+Set a passphrase.
 
 ---
 
-# Key Concepts to Remember
+## Display Your Public Key
 
-* Networks are systems of systems.
-* Applications drive network behavior.
-* Performance is affected by timing, not just speed.
-* Encryption changed observability.
-* Modern troubleshooting requires cross-layer thinking.
-* Understanding flows matters more than memorizing ports.
+### macOS/Linux
 
----
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
 
-# Suggested Reading and Exploration
+### Windows
 
-* RFC basics and protocol culture
-* HTTP vs HTTPS
-* Introductory Wireshark tutorials
-* TCP three-way handshake
-* DNS fundamentals
-* QUIC and HTTP/3 overview
+```powershell
+type %USERPROFILE%\.ssh\id_ed25519.pub
+```
 
-Recommended references include introductory networking materials and modern protocol documentation. ([en.ppt-online.org](https://en.ppt-online.org/831336?utm_source=chatgpt.com))
+Copy the full output.
 
 ---
 
-# Session 1 Exit Questions
+## Add the Key to DigitalOcean
 
-Before the next class, be able to answer:
+Navigate to:
 
-1. What is the difference between TCP and UDP?
-2. Why does latency matter?
-3. What role does DNS play?
-4. Why is encrypted traffic harder to troubleshoot?
-5. What does Wireshark actually show you?
-6. Why is “the network is slow” usually incomplete?
+```text
+Settings → Security → SSH Keys
+```
+
+Paste your public key and give it a meaningful name.
+
+---
+
+# 2. Provision Your Droplet
+
+## Create the VM
+
+Use these settings:
+
+| Setting        | Value                      |
+| -------------- | -------------------------- |
+| Image          | Ubuntu 24.04 LTS           |
+| Size           | Basic → Regular → $6/month |
+| Authentication | SSH Key                    |
+| Region         | Closest to you             |
+
+---
+
+## What LTS Means
+
+LTS stands for:
+
+```text
+Long Term Support
+```
+
+Production environments prefer LTS releases because they prioritize:
+
+* stability
+* security updates
+* long-term maintenance
+
+---
+
+## Hostname
+
+Use a meaningful hostname.
+
+Example:
+
+```text
+mark-lab-01
+```
+
+---
+
+# First SSH Connection
+
+Copy the Droplet public IP.
+
+Connect:
+
+```bash
+ssh root@YOUR_IP_ADDRESS
+```
+
+Accept the host fingerprint when prompted.
+
+---
+
+## Understanding the Prompt
+
+You will initially see something similar to:
+
+```text
+root@your-hostname:~#
+```
+
+| Symbol | Meaning      |
+| ------ | ------------ |
+| #      | Root user    |
+| $      | Regular user |
+
+---
+
+# 3. Linux CLI Orientation
+
+## The Mental Model Shift
+
+Traditional network operating systems are:
+
+* vendor-controlled
+* mode-based
+* restricted
+
+Linux is:
+
+* file-oriented
+* flexible
+* automation-friendly
+* operationally transparent
+
+---
+
+# Navigation Commands
+
+```bash
+pwd
+ls
+ls -la
+cd /etc
+cd ~
+cd -
+```
+
+---
+
+# Important Directories
+
+| Path     | Purpose             |
+| -------- | ------------------- |
+| /etc     | Configuration files |
+| /var/log | Logs                |
+| /var/www | Web content         |
+| /home    | User directories    |
+| /tmp     | Temporary files     |
+
+---
+
+# Reading Files
+
+```bash
+cat /etc/hostname
+less /etc/os-release
+tail -f /var/log/syslog
+```
+
+Stop running commands with:
+
+```text
+Ctrl+C
+```
+
+---
+
+# Help Systems
+
+```bash
+man ls
+ls --help
+```
+
+---
+
+# Pipes and Filtering
+
+```bash
+cat /etc/os-release | grep VERSION
+ps aux | grep apache
+```
+
+This is conceptually similar to using:
+
+```text
+| include
+```
+
+on network equipment.
+
+---
+
+# 4. Create a Non-Root User
+
+## Why This Matters
+
+Running permanently as root is dangerous.
+
+Best practice:
+
+* operate as a normal user
+* elevate privileges temporarily with sudo
+
+---
+
+## Create the User
+
+```bash
+adduser yourname
+```
+
+---
+
+## Grant sudo Access
+
+```bash
+usermod -aG sudo yourname
+```
+
+---
+
+## Test the User
+
+Open a second terminal.
+
+Connect:
+
+```bash
+ssh yourname@YOUR_IP_ADDRESS
+```
+
+Test sudo:
+
+```bash
+sudo apt update
+```
+
+---
+
+# File Permissions Basics
+
+View permissions:
+
+```bash
+ls -la /etc/passwd
+```
+
+Permission format:
+
+```text
+rwxr-xr-x
+```
+
+Commands to remember:
+
+```bash
+chmod
+chown
+```
+
+---
+
+# 5. Update the System
+
+Before installing software:
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+```
+
+---
+
+# What apt Is
+
+`apt` is Ubuntu’s package manager.
+
+We will use it to install:
+
+* Apache
+* PHP
+* MySQL
+
+Equivalent ecosystems:
+
+| Platform      | Package Manager |
+| ------------- | --------------- |
+| Ubuntu/Debian | apt             |
+| RHEL/CentOS   | yum / dnf       |
+
+---
+
+# 6. Install the LAMP Stack
+
+## What LAMP Means
+
+| Letter | Component |
+| ------ | --------- |
+| L      | Linux     |
+| A      | Apache    |
+| M      | MySQL     |
+| P      | PHP       |
+
+---
+
+# Install Apache
+
+```bash
+sudo apt install apache2 -y
+```
+
+Verify:
+
+```bash
+sudo systemctl status apache2
+```
+
+Look for:
+
+```text
+active (running)
+```
+
+---
+
+# Open the Firewall
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 'Apache Full'
+sudo ufw enable
+sudo ufw status
+```
+
+Always allow SSH before enabling the firewall.
+
+---
+
+# Test Apache
+
+Open:
+
+```text
+http://YOUR_IP_ADDRESS
+```
+
+You should see the default Apache page.
+
+---
+
+# Install MySQL
+
+```bash
+sudo apt install mysql-server -y
+sudo systemctl start mysql
+sudo systemctl enable mysql
+```
+
+Secure the installation:
+
+```bash
+sudo mysql_secure_installation
+```
+
+Recommended answers:
+
+* Remove anonymous users: yes
+* Disable remote root login: yes
+* Remove test database: yes
+* Reload privilege tables: yes
+
+---
+
+# Install PHP
+
+```bash
+sudo apt install php libapache2-mod-php php-mysql -y
+```
+
+---
+
+# Test PHP
+
+Create:
+
+```bash
+sudo nano /var/www/html/info.php
+```
+
+Add:
+
+```php
+<?php phpinfo(); ?>
+```
+
+Visit:
+
+```text
+http://YOUR_IP_ADDRESS/info.php
+```
+
+Delete the file afterward:
+
+```bash
+sudo rm /var/www/html/info.php
+```
+
+---
+
+# Apache Configuration Awareness
+
+Open:
+
+```bash
+sudo nano /etc/apache2/apache2.conf
+```
+
+Notice:
+
+* DocumentRoot
+* DirectoryIndex
+* configuration structure
+
+Restart Apache after changes:
+
+```bash
+sudo systemctl restart apache2
+```
+
+---
+
+# 7. Create a Simple Test Page
+
+Create:
+
+```bash
+sudo nano /var/www/html/index.html
+```
+
+Example:
+
+```html
+<!DOCTYPE html>
+<html>
+<head><title>My Lab Server</title></head>
+<body>
+  <h1>It works.</h1>
+  <p>Server: <strong>YOUR_NAME</strong></p>
+  <p>Next session: DNS, TLS, and a real domain name.</p>
+</body>
+</html>
+```
+
+Visit:
+
+```text
+http://YOUR_IP_ADDRESS
+```
+
+---
+
+# 8. Azure DevOps — First Commit
+
+## Why We’re Doing This
+
+Every student should leave Session 1 having:
+
+* cloned a repository
+* edited files
+* committed changes
+* pushed code
+
+---
+
+# Clone the Repository
+
+Run locally — not on the server:
+
+```bash
+git clone https://dev.azure.com/YOUR_ORG/linux-course/_git/linux-course
+cd linux-course
+```
+
+---
+
+# Create Your Student Directory
+
+```bash
+mkdir student-projects/YOUR_NAME
+cd student-projects/YOUR_NAME
+```
+
+---
+
+# Create Notes
+
+```bash
+nano session1-notes.md
+```
+
+Include:
+
+* server IP
+* commands that were difficult
+* troubleshooting notes
+
+---
+
+# Commit and Push
+
+```bash
+git add .
+git commit -m "Session 1: initial notes and server IP — YOUR_NAME"
+git push origin main
+```
+
+Verify your commit appears in Azure DevOps.
+
+---
+
+# 9. Wrap-Up & Homework
+
+## What You Accomplished
+
+Today you:
+
+* Provisioned a public cloud VM
+* Used SSH authentication
+* Installed a full LAMP stack
+* Served a public web page
+* Performed Linux administration
+* Made your first repository commit
+
+---
+
+# Important Commands
+
+```bash
+systemctl status apache2
+systemctl restart apache2
+sudo ufw status
+tail -f /var/log/apache2/access.log
+```
+
+---
+
+# Before Session 2
+
+Required:
+
+* Register a domain name
+* Create a Cloudflare account
+* Verify your server is still running
+
+Recommended TLDs:
+
+* .com
+* .net
+
+---
+
+# Optional Exploration
+
+Inspect:
+
+```bash
+/var/log/apache2/access.log
+```
+
+Observe:
+
+* browser requests
+* source IPs
+* timestamps
+* HTTP methods
+
+---
+
+# Preview of Session 2
+
+Next session we will:
+
+* Point DNS at your server
+* Configure TLS certificates
+* Use Cloudflare
+* Explore DNS propagation
+* Discuss why TTLs matter operationally
+
+---
+
+# Final Notes
+
+The goal of Session 1 is not mastery.
+
+The goal is to remove fear of:
+
+* Linux systems
+* SSH
+* cloud infrastructure
+* package management
+* web servers
+* terminal-based operations
+
+You now have a real Internet-facing server that you built and configured yourself.
